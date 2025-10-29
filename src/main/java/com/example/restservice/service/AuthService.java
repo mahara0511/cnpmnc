@@ -1,0 +1,98 @@
+package com.example.restservice.service;
+
+import com.example.restservice.entity.User;
+import com.example.restservice.repository.UserRepository;
+import com.example.restservice.util.JWTUtil;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+// Google OAuth
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+
+import com.example.restservice.common.enums.AuthProvider;
+import com.example.restservice.dto.auth.AuthResponseDto;
+
+import java.util.Collections;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.example.restservice.repository.RefreshTokenRepository;
+import com.example.restservice.service.RefreshTokenService;
+import com.example.restservice.entity.RefreshToken;
+
+
+@Service
+public class AuthService {
+    private final UserService userService;
+    private final JWTUtil jwtUtil;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final RefreshTokenRepository refreshTokenRepo;
+    private final RefreshTokenService refreshTokenService;
+
+    @Value("${google.clientId}")
+    private String googleClientId;
+
+    public AuthService(UserService userService, JWTUtil jwtUtil, RefreshTokenRepository refreshTokenRepo, RefreshTokenService refreshTokenService) {
+        this.userService = userService;
+        this.jwtUtil = jwtUtil;
+        this.refreshTokenRepo = refreshTokenRepo;
+        this.refreshTokenService = refreshTokenService;
+        this.passwordEncoder = new BCryptPasswordEncoder();
+    }
+
+    public hashPassword(String rawPassword) {
+        return passwordEncoder.encode(rawPassword);
+    }
+
+    public boolean verifyPassword(String rawPassword, String encodedPassword) {
+        return passwordEncoder.matches(rawPassword, encodedPassword);
+    }
+
+    public String generateToken(String email) {
+        return jwtUtil.generateToken(email);
+    }
+
+    public String authenticate(String googleToken) throws Exception {
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                new NetHttpTransport(),
+                new GsonFactory()
+        ).setAudience(Collections.singletonList(googleClientId))
+         .build();
+
+        GoogleIdToken idToken = verifier.verify(googleToken);
+
+        if (idToken == null) {
+            throw new RuntimeException("Invalid Google token");
+        }
+
+        String email = idToken.getPayload().getEmail();
+
+        User user = userRepo.findByEmail(email).orElseGet(() -> {
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setProvider(AuthProvider.GOOGLE);
+            return userRepo.save(newUser);
+        });
+
+        return jwtUtil.generateToken(user.getEmail());
+    }
+
+    public AuthResponseDto refreshAccessToken(AuthRefreshDto req) {
+        String requestRefreshToken = req.getRefreshToken();
+
+        RefreshToken refreshToken = refreshTokenRepo.findByToken(requestRefreshToken)
+                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+
+        refreshTokenService.verifyExpiration(refreshToken);
+
+        String newAccessToken = jwtUtil.generateToken(refreshToken.getUser().getEmail());
+
+        return AuthResponseDto.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(requestRefreshToken)
+                .build();
+    }
+
+}
