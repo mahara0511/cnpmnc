@@ -1,40 +1,60 @@
 package com.example.restservice.util;
 
 import io.jsonwebtoken.*;
-import org.springframework.stereotype.Component;
-import java.util.Date;
+import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 @Component
 public class JWTUtil {
     
-    private final String secret;
+    private final SecretKey secretKey;
     private final long jwtExpirationInMs;
 
     public JWTUtil(
         @Value("${jwt.secret}") String secret, 
         @Value("${jwt.expirationMs}") long jwtExpirationInMs
     ) {
-        this.secret = secret;
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.jwtExpirationInMs = jwtExpirationInMs;
     }
 
-    public String generationToken(String email) {
+    public String generateToken(String email) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(SignatureAlgorithm.HS512, secret)
+                .subject(email)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey)
                 .compact();
     }
 
     public String extractEmail(String token) {
-        return Jwts.parser().setSigningKey(secret)
-                .parseClaimsJws(token)
-                .getBody()
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
                 .getSubject();
+    }
+
+    public boolean validateToken(String authToken) {
+        try {
+            Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(authToken);
+            return true;
+        } catch (SignatureException | MalformedJwtException | ExpiredJwtException | 
+                 UnsupportedJwtException | IllegalArgumentException ex) {
+            return false;
+        }
     }
 }

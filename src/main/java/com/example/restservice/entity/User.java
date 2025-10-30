@@ -1,9 +1,10 @@
-package java.com.example.restservice.entity;
+package com.example.restservice.entity;
 
 import com.example.restservice.common.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
+import java.time.Instant;
 
 @Entity
 @Table(name = "users")
@@ -18,11 +19,13 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    private String name;
+
     private String imageLink;
     private String password;
 
     @Enumerated(EnumType.STRING)
-    private AuthProvider authProvider;
+    private AuthProvider provider;
 
     // Google OAuth tokens
     private String googleAccessToken;

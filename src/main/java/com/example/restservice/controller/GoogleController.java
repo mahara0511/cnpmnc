@@ -5,7 +5,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.example.restservice.service.GoogleService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
+@Tag(name = "Google API", description = "Endpoints for Google API interactions")
 @RequestMapping("/google")
 public class GoogleController {
     private final GoogleService googleService;

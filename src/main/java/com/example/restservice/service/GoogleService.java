@@ -6,13 +6,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.example.restservice.service.UserService;
 import java.util.Map;
-
+import com.example.restservice.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
+import java.time.Instant;
+import java.util.Optional;
 @Service
 class GoogleService {
     private final UserService userService;
-
-    public GoogleService(UserService userService) {
+    private final UserRepository userRepo;
+    @Value("${google.client.id}")
+    private String clientId;
+    @Value("${google.client.secret}")
+    private String clientSecret;
+    public GoogleService(UserService userService, UserRepository userRepo) {
         this.userService = userService;
+        this.userRepo = userRepo;
     }
 
     public String refreshGoogleAccessToken(User user) {
@@ -56,8 +64,10 @@ class GoogleService {
     }
 
     public Map<String, Object> getUserDriveFiles(String email) {
-        User user = userService.findByEmail(email);
-        if (user == null || user.getGoogleAccessToken() == null) {
+        User user = userService.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getGoogleAccessToken() == null) {
             throw new RuntimeException("User not found or Google token missing");
         }
         String accessToken = getValidAccessToken(user); // luôn lấy token mới nếu hết hạn

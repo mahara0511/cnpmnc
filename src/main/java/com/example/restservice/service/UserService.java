@@ -5,28 +5,43 @@ import com.example.restservice.entity.User;
 import org.springframework.stereotype.Service;
 import com.example.restservice.common.enums.AuthProvider;
 import com.example.restservice.service.AuthService;
+import com.example.restservice.util.JWTUtil;
 
+import java.util.Optional;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @Service
 public class UserService {
     private final UserRepository userRepository;
-    private final AuthService authService;
+    private final JWTUtil jwtUtil;
 
-    public UserService(UserRepository userRepository, AuthService authService) {
+    public UserService(UserRepository userRepository, JWTUtil jwtUtil) {
         this.userRepository = userRepository;
-        this.authService = authService;
+        this.jwtUtil = jwtUtil;
+    }
+
+    private String hashPassword(String rawPassword) {
+        return new BCryptPasswordEncoder().encode(rawPassword);
     }
 
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
     }
 
-    public User findByEmail(String email) {
-        return userRepository.findByEmail(email).orElse(null);
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     public User save(String email, String password, AuthProvider provider) {
-        
-        return userRepository.save(new User(null, email, authService.hashPassword(password), provider));
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(this.hashPassword(password));
+        user.setProvider(provider);
+        return userRepository.save(user);
+    }
+
+    public boolean existsByJwt(String jwt) {
+        return jwtUtil.validateToken(jwt);
     }
 
 }
+
