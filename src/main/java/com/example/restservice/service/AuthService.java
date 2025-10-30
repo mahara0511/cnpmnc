@@ -22,7 +22,17 @@ import com.example.restservice.repository.RefreshTokenRepository;
 import com.example.restservice.service.RefreshTokenService;
 import com.example.restservice.entity.RefreshToken;
 
+import com.example.restservice.repository.UserRepository;
+import com.example.restservice.entity.User;
 
+import com.example.restservice.dto.auth.AuthRefreshDto;
+import com.example.restservice.dto.auth.AuthResponseDto;
+import com.example.restservice.common.enums.AuthProvider;
+import com.example.restservice.util.JWTUtil;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.example.restservice.service.RefreshTokenService;
 @Service
 public class AuthService {
     private final UserService userService;
@@ -30,19 +40,20 @@ public class AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepo;
     private final RefreshTokenService refreshTokenService;
-
-    @Value("${google.clientId}")
+    private final UserRepository userRepo;
+    @Value("${google.client.id}")
     private String googleClientId;
 
-    public AuthService(UserService userService, JWTUtil jwtUtil, RefreshTokenRepository refreshTokenRepo, RefreshTokenService refreshTokenService) {
+    public AuthService(UserService userService, JWTUtil jwtUtil, RefreshTokenRepository refreshTokenRepo, RefreshTokenService refreshTokenService, UserRepository userRepo) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.refreshTokenRepo = refreshTokenRepo;
         this.refreshTokenService = refreshTokenService;
         this.passwordEncoder = new BCryptPasswordEncoder();
+        this.userRepo = userRepo;
     }
 
-    public hashPassword(String rawPassword) {
+    public String hashPassword(String rawPassword) {
         return passwordEncoder.encode(rawPassword);
     }
 

@@ -6,6 +6,8 @@ import com.example.restservice.entity.RefreshToken;
 import com.example.restservice.entity.User;
 import com.example.restservice.repository.UserRepository;
 import com.example.restservice.util.JWTUtil;
+import com.example.restservice.service.RefreshTokenService;
+import com.example.restservice.service.AuthService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -28,12 +30,14 @@ public class GoogleOAuth2Service {
 
     private final UserRepository userRepo;
     private final AuthService authService;
+    private final RefreshTokenService refreshTokenService;
     private final JWTUtil jwtUtil;
 
-    public GoogleOAuth2Service(UserRepository userRepo, AuthService authService, JWTUtil jwtUtil) {
+    public GoogleOAuth2Service(UserRepository userRepo, AuthService authService, JWTUtil jwtUtil, RefreshTokenService refreshTokenService) {
         this.userRepo = userRepo;
         this.authService = authService;
         this.jwtUtil = jwtUtil;
+        this.refreshTokenService = refreshTokenService; 
     }
 
     public AuthResponseDto handleGoogleCallback(String code) {
@@ -94,7 +98,7 @@ public class GoogleOAuth2Service {
 
         // 4. Sinh JWT nội bộ + refresh token nội bộ
         String jwtAccess = jwtUtil.generateToken(user.getEmail());
-        RefreshToken refreshToken = authService.createRefreshToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         // 5. Trả về response
         return AuthResponseDto.builder()

@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.restservice.service;
 
 import com.example.restservice.entity.RefreshToken;
 import com.example.restservice.entity.User;
@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import java.time.Instant;
 import java.util.UUID;
-
+import java.util.Optional;
 @Service
 public class RefreshTokenService {
 
     @Value("${jwt.refreshExpirationMs}")
-    private final long refreshTokenDurationMs; // 7 ngày
+    private long refreshTokenDurationMs; // 7 ngày
 
     private RefreshTokenRepository refreshTokenRepo;
     private UserRepository userRepo;

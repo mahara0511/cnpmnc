@@ -14,7 +14,7 @@ import lombok.*;
 public class RefreshToken {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue()
     private UUID id;
 
     @Column(nullable = false, unique = true)
