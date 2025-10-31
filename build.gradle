@@ -13,35 +13,43 @@ repositories {
 }
 
 dependencies {
+	// --- Core Spring Boot ---
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'  // JPA + Hibernate	
-	implementation 'org.postgresql:postgresql:42.7.3'  // PostgreSQL driver (phiên bản mới nhất 2025)
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	// --- Database ---
+	implementation 'org.postgresql:postgresql:42.7.3'
+
+	// --- API Docs ---
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'   // bắt buộc
 
+	// --- Lombok (compile-time only) ---
+	compileOnly 'org.projectlombok:lombok:1.18.32'
+	annotationProcessor 'org.projectlombok:lombok:1.18.32'
+	testCompileOnly 'org.projectlombok:lombok:1.18.32'
+	testAnnotationProcessor 'org.projectlombok:lombok:1.18.32'
 
-	compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	// --- JWT ---
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
-    // JWT
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
-	// Google OAuth2 Verify
-    implementation 'com.google.api-client:google-api-client:2.6.0'
-    implementation 'com.google.oauth-client:google-oauth-client:1.34.1'
+	// --- Google OAuth ---
+	implementation 'com.google.api-client:google-api-client:2.6.0'
+	implementation 'com.google.oauth-client:google-oauth-client:1.34.1'
 
-    // Password encoder
-    implementation 'org.springframework.security:spring-security-crypto'
+	// --- Password Encoding ---
+	implementation 'org.springframework.security:spring-security-crypto'
 
-    testCompileOnly 'org.projectlombok:lombok'
-		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testAnnotationProcessor 'org.projectlombok:lombok'
-		testImplementation 'org.springframework.boot:spring-boot-starter-test'
-		implementation 'org.springframework.boot:spring-boot-starter-security'
+	// --- Dev Tools ---
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
+	// --- Testing ---
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {
