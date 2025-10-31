@@ -1,3 +1,15 @@
+# IDE files
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Gradle
+.gradle/
+build/
+
 # Ignore environment & config
 application.properties
 .env
