@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  spring_app:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/spring_app:latest
+    container_name: spring_app
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
