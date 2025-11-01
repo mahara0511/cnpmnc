@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.UUID;
 
-public interface EmployeeRepository  extends JpaRepository<Employee, UUID> {
+public interface EmployeeRepository  extends JpaRepository<Employee, Long> {
     @Query("SELECT new com.example.restservice.response.UserResponse(e.name, e.email, e.id) FROM Employee e")
     List<UserResponse> findAllEmployees();
 }

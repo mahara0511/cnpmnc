@@ -16,7 +16,7 @@ import java.util.List;
 public class Criteria {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    private Long id;
 
     @Column(name = "name")
     private String name;
@@ -25,7 +25,7 @@ public class Criteria {
     private String description;
 
     @Column(name = "weight")
-    private double weight;
+    private int weight;
 
     @Column(name="Category")
     @Enumerated(EnumType.STRING)
