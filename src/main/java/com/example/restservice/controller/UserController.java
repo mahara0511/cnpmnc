@@ -1,6 +1,12 @@
 package com.example.restservice.controller;
 
+import com.example.restservice.response.ApiResponse;
+import com.example.restservice.response.UserMeResponse;
 import com.example.restservice.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -17,5 +23,16 @@ class UserController {
     @GetMapping("/exists")
     public boolean checkUserExists(@RequestParam String jwtString) {
         return userService.existsByJwt(jwtString);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+        }
+
+        return userService.getCurrentUserByEmail(userDetails.getUsername())
+                .<ResponseEntity<?>>map(user -> ResponseEntity.ok(ApiResponse.success(user)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found"));
     }
 }

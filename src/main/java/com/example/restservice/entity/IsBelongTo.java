@@ -14,7 +14,7 @@ import org.checkerframework.checker.units.qual.A;
 public class IsBelongTo {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    private Long id;
 
     @Column(name = "score")
     private Long score;

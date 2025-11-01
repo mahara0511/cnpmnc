@@ -15,7 +15,7 @@ import java.util.List;
 public class Assessment {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    private Long id;
 
     @Column(name = "totalScore")
     private double totalScore;
@@ -27,7 +27,7 @@ public class Assessment {
     @JoinColumn(name = "supervisorId",referencedColumnName = "id")
     private Supervisor supervisor;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", unique = true)
     private Employee employee;
 }

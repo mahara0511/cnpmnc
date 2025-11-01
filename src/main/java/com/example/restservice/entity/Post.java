@@ -17,7 +17,8 @@ import javax.annotation.processing.Generated;
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+    private Long id;
+
     private String profile;
     @Column(name = "description", length = 1000)
     private String desc;

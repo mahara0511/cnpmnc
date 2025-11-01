@@ -1,17 +1,16 @@
 package com.example.restservice.entity;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Table(name = "employee")
 public class Employee extends User {
 
-    @OneToOne(mappedBy = "employee", cascade = CascadeType.ALL)
-    private Assessment assessment;
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    private List<Assessment> assessment;
 }
