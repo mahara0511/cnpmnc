@@ -1,11 +1,14 @@
 package com.example.restservice.service;
 
 import com.example.restservice.entity.Employee;
+import com.example.restservice.mapper.UserMapper;
 import com.example.restservice.repository.EmployeeRepository;
 import com.example.restservice.repository.UserRepository;
 import com.example.restservice.entity.User;
 import com.example.restservice.response.UserResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.example.restservice.common.enums.AuthProvider;
 import com.example.restservice.util.JWTUtil;
@@ -20,6 +23,9 @@ public class UserService {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+    @Autowired
+    private UserMapper userMapper;
+
     public UserService(UserRepository userRepository, JWTUtil jwtUtil) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
@@ -43,9 +49,16 @@ public class UserService {
         employee.setPassword(this.hashPassword(password));
         return employeeRepository.save(employee);
     }
-    public List<UserResponse> findEmploye(){
-        List<UserResponse> employe = employeeRepository.findAllEmployees();
-        return employe;
+    public Page<UserResponse> findEmploye(String query, Pageable pageable){
+        Page<Employee> employees;
+
+        if (query != null && !query.trim().isEmpty()) {
+            employees = employeeRepository.findByNameContainingIgnoreCase(query, pageable);
+        } else {
+            employees = employeeRepository.findAll(pageable);
+        }
+
+        return employees.map(userMapper::toDTO);
     }
     public boolean existsByJwt(String jwt) {
         return jwtUtil.validateToken(jwt);
