@@ -13,3 +13,4 @@ build/
 # Ignore environment & config
 application.properties
 .env
+.gradle/
