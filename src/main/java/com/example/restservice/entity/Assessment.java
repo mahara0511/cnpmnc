@@ -27,7 +27,7 @@ public class Assessment {
     @JoinColumn(name = "supervisorId",referencedColumnName = "id")
     private Supervisor supervisor;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", unique = true)
     private Employee employee;
 }
