@@ -83,7 +83,6 @@ public class AuthService {
         User user = userRepo.findByEmail(email).orElseGet(() -> {
             User newUser = new User();
             newUser.setEmail(email);
-            newUser.setProvider(AuthProvider.GOOGLE);
             return userRepo.save(newUser);
         });
 

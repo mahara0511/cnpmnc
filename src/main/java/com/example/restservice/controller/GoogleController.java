@@ -19,6 +19,7 @@ public class GoogleController {
     
     @GetMapping("/drive/files")
     public Object getDriveFiles(@RequestParam("email") String email) {
-        return googleService.getUserDriveFiles(email);
+//        return googleService.getUserDriveFiles(email);
+        return null;
     }
 }
