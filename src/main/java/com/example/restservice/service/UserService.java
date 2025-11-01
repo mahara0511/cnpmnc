@@ -35,7 +35,6 @@ public class UserService {
         User user = new User();
         user.setEmail(email);
         user.setPassword(this.hashPassword(password));
-        user.setProvider(provider);
         return userRepository.save(user);
     }
 

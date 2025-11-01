@@ -82,18 +82,10 @@ public class GoogleOAuth2Service {
         User user = userRepo.findByEmail(email).orElseGet(() -> {
             User newUser = new User();
             newUser.setEmail(email);
-            newUser.setProvider(AuthProvider.GOOGLE);
             return newUser;
         });
 
         user.setName(name);
-        user.setImageLink(picture);
-        user.setGoogleAccessToken(accessToken);
-        if (refreshTokenGoogle != null) { // refresh token có thể null nếu user đã đồng ý trước đó
-            user.setGoogleRefreshToken(refreshTokenGoogle);
-        }
-        user.setGoogleTokenExpiry(Instant.now().plusSeconds(expiresIn));
-
         userRepo.save(user);
 
         // 4. Sinh JWT nội bộ + refresh token nội bộ
