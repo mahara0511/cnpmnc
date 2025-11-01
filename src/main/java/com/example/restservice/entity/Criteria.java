@@ -25,7 +25,7 @@ public class Criteria {
     private String description;
 
     @Column(name = "weight")
-    private double weight;
+    private int weight;
 
     @Column(name="Category")
     @Enumerated(EnumType.STRING)

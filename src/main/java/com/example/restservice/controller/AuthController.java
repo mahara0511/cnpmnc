@@ -1,5 +1,6 @@
 package com.example.restservice.controller;
 
+import com.example.restservice.dto.ApiResponse;
 import com.example.restservice.util.JWTUtil;
 import com.example.restservice.repository.UserRepository;
 import com.example.restservice.service.AuthService;
@@ -24,6 +25,12 @@ import java.util.Optional;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
+import com.example.restservice.entity.Supervisor;
+import com.example.restservice.entity.Employee;
 
 @RestController
 @Tag(name = "Authentication", description = "Endpoints for user authentication and registration")
@@ -34,69 +41,86 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final GoogleOAuth2Service googleAuthService;
 
-    public AuthController(UserService userService, AuthService authService, RefreshTokenService refreshTokenService, GoogleOAuth2Service googleAuthService) {
+    public AuthController(UserService userService, AuthService authService,
+                          RefreshTokenService refreshTokenService, GoogleOAuth2Service googleAuthService) {
         this.userService = userService;
         this.authService = authService;
-        this.googleAuthService = googleAuthService;
         this.refreshTokenService = refreshTokenService;
+        this.googleAuthService = googleAuthService;
     }
+
+    // 🔹 Đăng ký tài khoản
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody AuthRequestDto req) {
+    public ResponseEntity<ApiResponse<?>> register(@RequestBody AuthRequestDto req) {
         if (userService.existsByEmail(req.getEmail())) {
-            return ResponseEntity.badRequest().body("Email already exists");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(400, "Email already exists"));
         }
 
         userService.save(req.getEmail(), req.getPassword(), AuthProvider.LOCAL);
-        return ResponseEntity.ok("Registered successfully");
+        return ResponseEntity.ok(ApiResponse.success(200, "Registered successfully", null));
     }
 
+    // 🔹 Đăng nhập
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequestDto req) {
+    public ResponseEntity<ApiResponse<?>> login(@RequestBody AuthRequestDto req) {
         Optional<User> optionalUser = userService.findByEmail(req.getEmail());
 
         if (optionalUser.isEmpty()) {
-            return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "User not found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, "User not found"));
         }
 
         User user = optionalUser.get();
 
         if (!authService.verifyPassword(req.getPassword(), user.getPassword())) {
-            return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("error", "Invalid credentials"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(401, "Invalid credentials"));
         }
 
-        String token = authService.generateToken(user.getEmail());
+
+        String role;
+        if (user instanceof Supervisor) {
+            role = "SUPERVISOR";
+        } else if (user instanceof Employee) {
+            role = "EMPLOYEE";
+        } else {
+            role = "USER";
+        }
+
+
+        String token = authService.generateToken(user.getEmail(), user.getId(), role);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
-        return ResponseEntity.ok(
-            AuthResponseDto.builder()
+        AuthResponseDto authResponse = AuthResponseDto.builder()
                 .accessToken(token)
                 .refreshToken(refreshToken.getToken())
-                .build()
-        );
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.success(200, "Login successful", authResponse));
     }
 
-    
+    // 🔹 Google OAuth2 callback
     @GetMapping("/callback/google")
-    public ResponseEntity<?> googleCallback(@RequestParam("code") String code) {
+    public ResponseEntity<ApiResponse<?>> googleCallback(@RequestParam("code") String code) {
         try {
-            // Service xử lý code -> access_token -> user info -> lưu DB -> sinh JWT
             AuthResponseDto response = googleAuthService.handleGoogleCallback(code);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success(200, "Google login successful", response));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Google OAuth2 failed: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(400, "Google OAuth2 failed: " + e.getMessage()));
         }
     }
 
+    // 🔹 Làm mới token
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestBody AuthRefreshDto req) {
+    public ResponseEntity<ApiResponse<?>> refreshToken(@RequestBody AuthRefreshDto req) {
         try {
-            return ResponseEntity.ok(authService.refreshAccessToken(req));
+            AuthResponseDto response = authService.refreshAccessToken(req);
+            return ResponseEntity.ok(ApiResponse.success(200, "Token refreshed", response));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Refresh failed: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(400, "Refresh failed: " + e.getMessage()));
         }
     }
 }

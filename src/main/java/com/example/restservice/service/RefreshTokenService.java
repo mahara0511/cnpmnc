@@ -24,10 +24,14 @@ public class RefreshTokenService {
     }
 
     public RefreshToken createRefreshToken(User user) {
-        RefreshToken token = new RefreshToken();
+        // Tìm token hiện có của user (nếu có)
+        Optional<RefreshToken> existingToken = refreshTokenRepo.findByUser(user);
+
+        RefreshToken token = existingToken.orElseGet(RefreshToken::new);
         token.setUser(user);
         token.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
         token.setToken(UUID.randomUUID().toString());
+
         return refreshTokenRepo.save(token);
     }
 
