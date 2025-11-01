@@ -55,3 +55,12 @@ dependencies {
 test {
 	useJUnitPlatform()
 }
+
+tasks.named('processResources') {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    from('src/main/resources') {
+        include '**/*.yml'
+        include '**/*.yaml'
+        include '**/*.properties'
+    }
+}
