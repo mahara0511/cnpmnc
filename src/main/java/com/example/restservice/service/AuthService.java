@@ -33,6 +33,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.example.restservice.service.RefreshTokenService;
+import com.example.restservice.repository.RefreshTokenRepository;
+import com.example.restservice.entity.RefreshToken;
+import com.example.restservice.repository.UserRepository;
+import com.example.restservice.entity.User;
+import java.util.Optional;
+import com.example.restservice.entity.Supervisor;
+import com.example.restservice.entity.Employee;
+
 @Service
 public class AuthService {
     private final UserService userService;
@@ -61,8 +69,8 @@ public class AuthService {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
 
-    public String generateToken(String email) {
-        return jwtUtil.generateToken(email);
+    public String generateToken(String email, String userId, String role) {
+        return jwtUtil.generateToken(email, userId, role);
     }
 
     public String authenticate(String googleToken) throws Exception {
@@ -86,7 +94,7 @@ public class AuthService {
             return userRepo.save(newUser);
         });
 
-        return jwtUtil.generateToken(user.getEmail());
+        return jwtUtil.generateToken(user.getEmail(), user.getId().toString(), "USER");
     }
 
     public AuthResponseDto refreshAccessToken(AuthRefreshDto req) {
@@ -96,8 +104,16 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Refresh token not found"));
 
         refreshTokenService.verifyExpiration(refreshToken);
-
-        String newAccessToken = jwtUtil.generateToken(refreshToken.getUser().getEmail());
+        User user = refreshToken.getUser();
+        String role;
+        if (user instanceof Supervisor) {
+            role = "SUPERVISOR";
+        } else if (user instanceof Employee) {
+            role = "EMPLOYEE";
+        } else {
+            role = "USER";
+        }
+        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getId().toString(), role);
 
         return AuthResponseDto.builder()
                 .accessToken(newAccessToken)
