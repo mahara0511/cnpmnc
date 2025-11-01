@@ -6,11 +6,24 @@ import com.example.restservice.repository.UserRepository;
 import com.example.restservice.service.AuthService;
 import com.example.restservice.service.UserService;
 import com.example.restservice.service.RefreshTokenService;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.Ref;
+
+import org.springframework.http.ResponseEntity;
+
 import com.example.restservice.entity.RefreshToken;
 import com.example.restservice.entity.User;
 import com.example.restservice.common.enums.AuthProvider;
 import com.example.restservice.dto.auth.*;
 import com.example.restservice.service.GoogleOAuth2Service;
+import com.example.restservice.service.RefreshTokenService;
+import com.example.restservice.service.AuthService;
+import java.util.Optional;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -76,7 +89,7 @@ public class AuthController {
         }
 
 
-        String token = authService.generateToken(user.getEmail(), user.getId().toString(), role);
+        String token = authService.generateToken(user.getEmail(), user.getId(), role);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         AuthResponseDto authResponse = AuthResponseDto.builder()

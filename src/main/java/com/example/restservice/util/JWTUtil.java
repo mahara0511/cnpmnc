@@ -26,7 +26,7 @@ public class JWTUtil {
     }
 
     /** Sinh JWT có chứa email, id, role */
-    public String generateToken(String email, String userId, String role) {
+    public String generateToken(String email, Long userId, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 

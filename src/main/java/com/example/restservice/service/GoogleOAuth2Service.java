@@ -89,7 +89,7 @@ public class GoogleOAuth2Service {
         userRepo.save(user);
 
         // 4. Sinh JWT nội bộ + refresh token nội bộ
-        String jwtAccess = jwtUtil.generateToken(user.getEmail(), user.getId().toString(), "EMPLOYEE");
+        String jwtAccess = jwtUtil.generateToken(user.getEmail(), user.getId(), "EMPLOYEE");
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         // 5. Trả về response

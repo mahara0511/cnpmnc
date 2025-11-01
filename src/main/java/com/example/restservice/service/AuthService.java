@@ -68,8 +68,7 @@ public class AuthService {
     public boolean verifyPassword(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
-
-    public String generateToken(String email, String userId, String role) {
+    public String generateToken(String email, Long userId, String role) {
         return jwtUtil.generateToken(email, userId, role);
     }
 
@@ -78,7 +77,7 @@ public class AuthService {
                 new NetHttpTransport(),
                 new GsonFactory()
         ).setAudience(Collections.singletonList(googleClientId))
-         .build();
+                .build();
 
         GoogleIdToken idToken = verifier.verify(googleToken);
 
@@ -94,7 +93,7 @@ public class AuthService {
             return userRepo.save(newUser);
         });
 
-        return jwtUtil.generateToken(user.getEmail(), user.getId().toString(), "USER");
+        return jwtUtil.generateToken(user.getEmail(), user.getId(), "USER");
     }
 
     public AuthResponseDto refreshAccessToken(AuthRefreshDto req) {
@@ -113,7 +112,7 @@ public class AuthService {
         } else {
             role = "USER";
         }
-        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getId().toString(), role);
+        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getId(), role);
 
         return AuthResponseDto.builder()
                 .accessToken(newAccessToken)
