@@ -1,13 +1,19 @@
 package com.example.restservice.controller;
 
+import com.example.restservice.response.UserResponse;
 import com.example.restservice.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @Tag(name = "User Management", description = "Endpoints for user management")
 @RequestMapping("/users")
-class UserController {
+public class UserController {
     private final UserService userService;
 
     public UserController(UserService userService) {
@@ -17,5 +23,17 @@ class UserController {
     @GetMapping("/exists")
     public boolean checkUserExists(@RequestParam String jwtString) {
         return userService.existsByJwt(jwtString);
+    }
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+        }
+        try {
+            UserResponse response = userService.getCurrentUser(userDetails);
+            return ResponseEntity.ok(response);
+        } catch (UsernameNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        }
     }
 }

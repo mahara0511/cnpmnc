@@ -12,7 +12,10 @@ import com.example.restservice.util.JWTUtil;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 @Service
 public class UserService {
     private final UserRepository userRepository;
@@ -36,7 +39,19 @@ public class UserService {
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+    public UserResponse getCurrentUser(UserDetails userDetails) {
+        if (userDetails == null) {
+            throw new UsernameNotFoundException("User not authenticated");
+        }
 
+        String email = userDetails.getUsername();
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
+        return new UserResponse(user.getName(), user.getEmail(), user.getId());
+    }
     public User save(String email, String password, AuthProvider provider) {
         Employee employee = new Employee();
         employee.setEmail(email);
