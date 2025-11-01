@@ -1,8 +1,8 @@
 version: "3.8"
 services:
   spring_app:
-    # image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/spring_app:latest
-    image: spring-app:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/spring_app:latest
+    # image: spring-app:latest
     container_name: spring_app
     restart: always
     ports:
