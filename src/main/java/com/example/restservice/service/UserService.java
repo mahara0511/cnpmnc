@@ -1,12 +1,16 @@
 package com.example.restservice.service;
 
+import com.example.restservice.entity.Employee;
+import com.example.restservice.repository.EmployeeRepository;
 import com.example.restservice.repository.UserRepository;
 import com.example.restservice.entity.User;
+import com.example.restservice.response.UserResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.example.restservice.common.enums.AuthProvider;
-import com.example.restservice.service.AuthService;
 import com.example.restservice.util.JWTUtil;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @Service
@@ -14,6 +18,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final JWTUtil jwtUtil;
 
+    @Autowired
+    private EmployeeRepository employeeRepository;
     public UserService(UserRepository userRepository, JWTUtil jwtUtil) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
@@ -32,12 +38,15 @@ public class UserService {
     }
 
     public User save(String email, String password, AuthProvider provider) {
-        User user = new User();
-        user.setEmail(email);
-        user.setPassword(this.hashPassword(password));
-        return userRepository.save(user);
+        Employee employee = new Employee();
+        employee.setEmail(email);
+        employee.setPassword(this.hashPassword(password));
+        return employeeRepository.save(employee);
     }
-
+    public List<UserResponse> findEmploye(){
+        List<UserResponse> employe = employeeRepository.findAllEmployees();
+        return employe;
+    }
     public boolean existsByJwt(String jwt) {
         return jwtUtil.validateToken(jwt);
     }

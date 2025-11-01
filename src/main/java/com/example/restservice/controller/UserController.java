@@ -18,5 +18,4 @@ class UserController {
     public boolean checkUserExists(@RequestParam String jwtString) {
         return userService.existsByJwt(jwtString);
     }
-    // Define your endpoints here
 }
