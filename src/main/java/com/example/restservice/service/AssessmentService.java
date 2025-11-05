@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+import com.example.restservice.common.enums.Status;
 @Service
 public class AssessmentService {
   private final AssessmentRepository assessmentRepository;
@@ -40,7 +40,7 @@ public class AssessmentService {
     this.criteriaRepository = criteriaRepository;
   }
 
-  public List<AssessmentResponseDto> getAllAssessments(Long employeeId, String status) {
+  public List<AssessmentResponseDto> getAllAssessments(Long employeeId, Status status) {
     List<Assessment> assessments;
     if (employeeId != null && status != null) {
       assessments = assessmentRepository.findByEmployeeIdAndStatus(employeeId, status);
@@ -56,7 +56,7 @@ public class AssessmentService {
             .collect(Collectors.toList());
   }
 
-  public List<AssessmentResponseDto> getAssessmentsBySupervisor(Long supervisorId, Long employeeId, String status) {
+  public List<AssessmentResponseDto> getAssessmentsBySupervisor(Long supervisorId, Long employeeId, Status status) {
     List<Assessment> assessments;
     if (employeeId != null && status != null) {
       assessments = assessmentRepository.findBySupervisorIdAndEmployeeIdAndStatus(supervisorId, employeeId, status);
@@ -98,7 +98,7 @@ public class AssessmentService {
     Assessment assessment = new Assessment();
     assessment.setSupervisor(supervisor);
     assessment.setEmployee(employee);
-    assessment.setStatus("InProgress");
+    assessment.setStatus(Status.InProgress);
     assessment.setCreatedAt(LocalDateTime.now());
 
     // Calculate total score
@@ -151,20 +151,42 @@ public class AssessmentService {
 
     // Check if supervisor owns this assessment
     if (!assessment.getSupervisor().getId().equals(supervisorId)) {
-      throw new RuntimeException("You don't have permission to update this assessment");
+        throw new RuntimeException("You don't have permission to update this assessment");
     }
 
-    // Validate status
-    if (!request.getStatus().equals("InProgress") && !request.getStatus().equals("Published")) {
-      throw new RuntimeException("Invalid status. Must be 'InProgress' or 'Published'");
-    }
+    // Parse and validate status
+    Status newStatus;
+    try {
+        // Trim whitespace and convert string to enum
+        String statusStr = request.getStatus();
+        
+        if (statusStr == null || statusStr.trim().isEmpty()) {
+            throw new RuntimeException("Status cannot be empty");
+        }
+        
+        statusStr = statusStr.trim();
+        
+        // Normalize to match enum values (case-insensitive)
+        if (statusStr.equalsIgnoreCase("InProgress") || 
+            statusStr.equalsIgnoreCase("in_progress") || 
+            statusStr.equalsIgnoreCase("INPROGRESS")) {
+            newStatus = Status.InProgress;
+        } else if (statusStr.equalsIgnoreCase("Published") || 
+                   statusStr.equalsIgnoreCase("PUBLISHED")) {
+            newStatus = Status.Published;
+          } else {
+              throw new IllegalArgumentException("Invalid status: '" + statusStr + "'");
+          }
+      } catch (IllegalArgumentException e) {
+          throw new RuntimeException("Invalid status. Must be 'InProgress' or 'Published'");
+      }
 
-    // Update status
-    assessment.setStatus(request.getStatus());
+      // Update status
+      assessment.setStatus(newStatus);
 
-    // Save assessment
-    Assessment updatedAssessment = assessmentRepository.save(assessment);
+      // Save assessment
+      Assessment updatedAssessment = assessmentRepository.save(assessment);
 
-    return assessmentMapper.toDto(updatedAssessment);
+      return assessmentMapper.toDto(updatedAssessment);
   }
 }

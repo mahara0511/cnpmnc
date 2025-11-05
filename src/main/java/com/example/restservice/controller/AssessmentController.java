@@ -15,7 +15,7 @@ import com.example.restservice.dto.ApiResponse;
 import com.example.restservice.security.CustomUserDetails;
 import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
-
+import com.example.restservice.common.enums.Status;
 @RestController
 @Tag(name = "Assessment", description = "Assessment API")
 @RequestMapping("/assessments")
@@ -32,7 +32,7 @@ public class AssessmentController {
   public ResponseEntity<ApiResponse<List<AssessmentResponseDto>>> getSupervisorAssessments(
           @AuthenticationPrincipal CustomUserDetails userDetails,
           @RequestParam(required = false) Long employeeId,
-          @RequestParam(required = false) String status) {
+          @RequestParam(required = false) Status status) {
     Long supervisorId = userDetails.getId();
     List<AssessmentResponseDto> assessments = assessmentService.getAssessmentsBySupervisor(supervisorId, employeeId, status);
     return ResponseEntity.ok(ApiResponse.success(200, "Success", assessments));
@@ -68,6 +68,7 @@ public class AssessmentController {
           @AuthenticationPrincipal CustomUserDetails userDetails,
           @PathVariable Long assessmentId,
           @RequestBody UpdateAssessmentStatusRequestDto request) {
+            
     Long supervisorId = userDetails.getId();
     AssessmentResponseDto assessment = assessmentService.updateAssessmentStatus(supervisorId, assessmentId, request);
     return ResponseEntity.ok(ApiResponse.success(200, "Success", assessment));

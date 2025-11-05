@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
+import com.example.restservice.common.enums.Status;
 @Data
 @Builder
 @NoArgsConstructor
@@ -17,7 +17,7 @@ public class AssessmentResponseDto {
     private Long assessmentId;
     private SupervisorDto supervisor;
     private EmployeeDto employee;
-    private String status;
+    private Status status;
     private Double totalScore;
     private List<CriteriaScoreDto> criteriaScores;
     

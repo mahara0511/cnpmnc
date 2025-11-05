@@ -5,9 +5,10 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.example.restservice.common.enums.Status;
 
 @Entity
 @Data
@@ -19,21 +20,22 @@ public class Assessment {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(name = "totalScore")
+    @Column(name = "total_score")
     private double totalScore;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private Status status;
 
     @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL)
     private List<IsBelongTo> isBelongTo;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supervisorId",referencedColumnName = "id")
+    @JoinColumn(name = "supervisor_id", referencedColumnName = "id")
     private Supervisor supervisor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id", unique = true)
+    @JoinColumn(name = "employee_id")
     private Employee employee;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")

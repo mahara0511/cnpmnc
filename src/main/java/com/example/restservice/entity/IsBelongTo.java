@@ -19,14 +19,14 @@ public class IsBelongTo {
     @Column(name = "score")
     private Long score;
 
-    @Column(name = "comment",columnDefinition = "TEXT")
+    @Column(name = "comment", columnDefinition = "TEXT")
     private String comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assessmentId",referencedColumnName = "id")
+    @JoinColumn(name = "assessment_id", referencedColumnName = "id")
     private Assessment assessment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "criteriaId",referencedColumnName ="id")
+    @JoinColumn(name = "criteria_id", referencedColumnName = "id")
     private Criteria criteria;
 }
