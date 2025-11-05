@@ -21,14 +21,14 @@ public class Criteria {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "description",columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "weight")
     private int weight;
 
-    @Column(name="Category")
     @Enumerated(EnumType.STRING)
+    @Column(name = "category")
     private Category category;
 
     @OneToMany(mappedBy = "criteria",cascade = CascadeType.ALL)

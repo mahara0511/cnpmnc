@@ -8,10 +8,12 @@ import com.example.restservice.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import java.util.NoSuchElementException;
+import io.swagger.v3.oas.annotations.Operation;
 
+@Tag(name = "Criteria", description = "Endpoints for managing criteria")
 @RestController
 @RequestMapping("/criteria")
 public class CriteriaController {
@@ -21,6 +23,18 @@ public class CriteriaController {
     public CriteriaController(CriteriaService criteriaService, UserService userService) {
         this.criteriaService = criteriaService;
         this.userService = userService;
+    }
+
+    // search criteria with search text
+    @Operation(summary = "Search Criteria", description = "Search criteria based on the provided search text")
+    @GetMapping("")
+    public ResponseEntity<?> search(@RequestParam(defaultValue = "") String searchText) {
+        try {
+            var results = criteriaService.search(searchText);
+            return ResponseEntity.ok(ApiResponse.success(results));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage(), 400));
+        }
     }
 
     @PostMapping("")
