@@ -1,10 +1,12 @@
 package com.example.restservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -20,6 +22,9 @@ public class Assessment {
     @Column(name = "totalScore")
     private double totalScore;
 
+    @Column(name = "status")
+    private String status;
+
     @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL)
     private List<IsBelongTo> isBelongTo;
 
@@ -30,4 +35,13 @@ public class Assessment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", unique = true)
     private Employee employee;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+    createdAt = LocalDateTime.now();
+    }
 }

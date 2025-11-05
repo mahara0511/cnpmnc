@@ -9,6 +9,7 @@ import com.example.restservice.response.CriteriaDetailResponse;
 import com.example.restservice.response.CriteriaResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 @Service
 public class CriteriaService {
@@ -22,6 +23,11 @@ public class CriteriaService {
         this.userRepository = userRepository;
         this.criteriaRepository = criteriaRepository;
     }
+
+    public List<CriteriaResponseDTO> search(String searchText) {
+        List<Criteria> criteriaList = criteriaRepository.findByNameContainingIgnoreCase(searchText);
+        return criteriaMapper.toDTOs(criteriaList);
+    }    
 
     public CriteriaResponseDTO create(CreateCriteriaDTO req) {
         Criteria criteria = new Criteria();
