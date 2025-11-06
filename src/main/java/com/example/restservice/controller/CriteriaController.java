@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import java.util.NoSuchElementException;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Criteria", description = "Endpoints for managing criteria")
 @RestController
@@ -37,6 +38,8 @@ public class CriteriaController {
         }
     }
 
+    @Operation(summary = "Create Criteria", description = "Create a new criteria with the provided details")
+    @PreAuthorize("hasRole('SUPERVISOR')")
     @PostMapping("")
     public ResponseEntity<?> create(@RequestBody CreateCriteriaDTO req) {
         try {
@@ -47,6 +50,9 @@ public class CriteriaController {
         }
     }
 
+
+    @Operation(summary = "Update Criteria", description = "Update an existing criteria identified by criteriaId with the provided details")
+    @PreAuthorize("hasRole('SUPERVISOR')")
     @PatchMapping({"/{criteriaId}"})
     public ResponseEntity<?> updateCriteria(
             @PathVariable("criteriaId") Long criteriaId,
@@ -63,6 +69,9 @@ public class CriteriaController {
         }
     }
 
+
+    @Operation(summary = "Delete Criteria", description = "Delete an existing criteria identified by criteriaId")
+    @PreAuthorize("hasRole('SUPERVISOR')")
     @DeleteMapping({"/{criteriaId}"})
     public ResponseEntity<?> deleteCriteria(@PathVariable("criteriaId") Long criteriaId) {
         try {

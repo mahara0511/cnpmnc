@@ -189,4 +189,85 @@ public class AssessmentService {
 
       return assessmentMapper.toDto(updatedAssessment);
   }
+
+  public AssessmentResponseDto getAssessmentById(Long userId, Long assessmentId) {
+    // Get assessment
+    Assessment assessment = assessmentRepository.findById(assessmentId)
+            .orElseThrow(() -> new RuntimeException("Assessment not found with id: " + assessmentId));
+
+    // Check permission: supervisor can view their assessments, employee can view their assigned assessments
+    boolean isSupervisor = assessment.getSupervisor().getId().equals(userId);
+    boolean isEmployee = assessment.getEmployee().getId().equals(userId);
+
+    if (!isSupervisor && !isEmployee) {
+      throw new RuntimeException("You don't have permission to view this assessment");
+    }
+
+    return assessmentMapper.toDto(assessment);
+  }
+
+  @Transactional
+  public AssessmentResponseDto updateAssessment(Long supervisorId, Long assessmentId, CreateAssessmentRequestDto request) {
+    // Get assessment
+    Assessment assessment = assessmentRepository.findById(assessmentId)
+            .orElseThrow(() -> new RuntimeException("Assessment not found with id: " + assessmentId));
+
+    // Check if supervisor owns this assessment
+    if (!assessment.getSupervisor().getId().equals(supervisorId)) {
+      throw new RuntimeException("You don't have permission to update this assessment");
+    }
+
+    // Validate employee exists (if changing employee)
+    if (request.getEmployeeId() != null && !request.getEmployeeId().equals(assessment.getEmployee().getId())) {
+      Employee employee = (Employee) userRepository.findById(request.getEmployeeId())
+              .orElseThrow(() -> new RuntimeException("Employee not found with id: " + request.getEmployeeId()));
+      assessment.setEmployee(employee);
+    }
+
+    // Remove existing criteria scores (orphanRemoval will handle deletion)
+    if (assessment.getIsBelongTo() != null) {
+      assessment.getIsBelongTo().clear();
+    }
+
+    // Create new criteria scores
+    List<IsBelongTo> newCriteriaScores = request.getScores().stream()
+            .map(scoreDto -> {
+              Criteria criteria = criteriaRepository.findById(scoreDto.getCriteriaId())
+                      .orElseThrow(() -> new RuntimeException("Criteria not found with id: " + scoreDto.getCriteriaId()));
+
+              IsBelongTo isBelongTo = new IsBelongTo();
+              isBelongTo.setAssessment(assessment);
+              isBelongTo.setCriteria(criteria);
+              isBelongTo.setScore(scoreDto.getScore());
+              isBelongTo.setComment(scoreDto.getComment());
+
+              return isBelongTo;
+            })
+            .collect(Collectors.toList());
+
+    // Add new scores to the cleared list
+    assessment.getIsBelongTo().addAll(newCriteriaScores);
+
+    // Recalculate total score
+    double totalScore = 0;
+    int totalWeight = 0;
+
+    for (IsBelongTo isBelongTo : assessment.getIsBelongTo()) {
+      if (isBelongTo.getScore() != null) {
+        totalScore += isBelongTo.getScore() * isBelongTo.getCriteria().getWeight();
+        totalWeight += isBelongTo.getCriteria().getWeight();
+      }
+    }
+
+    if (totalWeight > 0) {
+      assessment.setTotalScore(totalScore / totalWeight);
+    } else {
+      assessment.setTotalScore(0.0);
+    }
+
+    // Save assessment
+    Assessment updatedAssessment = assessmentRepository.save(assessment);
+
+    return assessmentMapper.toDto(updatedAssessment);
+  }
 }

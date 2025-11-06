@@ -27,7 +27,7 @@ public class Assessment {
     @Column(name = "status")
     private Status status;
 
-    @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IsBelongTo> isBelongTo;
 
     @ManyToOne(fetch = FetchType.LAZY)

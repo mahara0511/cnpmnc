@@ -44,6 +44,9 @@ dependencies {
 	// --- Password Encoding ---
 	implementation 'org.springframework.security:spring-security-crypto'
 
+	// --- JSON Processing ---
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
 	// --- Dev Tools ---
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

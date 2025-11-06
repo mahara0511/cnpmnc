@@ -74,4 +74,26 @@ public class AssessmentController {
     return ResponseEntity.ok(ApiResponse.success(200, "Success", assessment));
   }
 
+  @Operation(summary = "Get assessment by ID", description = "Retrieve detailed information of a specific assessment by its ID. Supervisors can view their own assessments, employees can view their assigned assessments.")
+  @GetMapping("/{assessmentId}")
+  @PreAuthorize("hasAnyRole('SUPERVISOR', 'EMPLOYEE')")
+  public ResponseEntity<ApiResponse<AssessmentResponseDto>> getAssessmentById(
+          @AuthenticationPrincipal CustomUserDetails userDetails,
+          @PathVariable Long assessmentId) {
+    AssessmentResponseDto assessment = assessmentService.getAssessmentById(userDetails.getId(), assessmentId);
+    return ResponseEntity.ok(ApiResponse.success(200, "Success", assessment));
+  }
+
+  @Operation(summary = "Update assessment", description = "Update an existing assessment including criteria scores. Can add new criteria, update existing scores, or remove criteria. Only supervisors can update assessments.")
+  @PutMapping("/{assessmentId}")
+  @PreAuthorize("hasRole('SUPERVISOR')")
+  public ResponseEntity<ApiResponse<AssessmentResponseDto>> updateAssessment(
+          @AuthenticationPrincipal CustomUserDetails userDetails,
+          @PathVariable Long assessmentId,
+          @RequestBody CreateAssessmentRequestDto request) {
+    Long supervisorId = userDetails.getId();
+    AssessmentResponseDto assessment = assessmentService.updateAssessment(supervisorId, assessmentId, request);
+    return ResponseEntity.ok(ApiResponse.success(200, "Assessment updated successfully", assessment));
+  }
+
 }
