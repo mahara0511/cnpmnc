@@ -3,7 +3,6 @@ package com.example.restservice.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.Arrays;
-import java.util.UUID;
 import java.util.List;
 
 

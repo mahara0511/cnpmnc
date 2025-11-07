@@ -1,10 +1,7 @@
 package com.example.restservice.entity;
 
-import com.example.restservice.common.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.UUID;
-import java.time.Instant;
 
 @Entity
 @Data

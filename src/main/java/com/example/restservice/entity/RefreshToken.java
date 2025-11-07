@@ -2,7 +2,6 @@ package com.example.restservice.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
-import java.util.UUID;
 import com.example.restservice.entity.User;
 import lombok.*;
 
