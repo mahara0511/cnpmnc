@@ -68,4 +68,21 @@ public class AIController {
         
         return ResponseEntity.ok(ApiResponse.success(200, "AI response generated", response));
     }
+    
+    @Operation(summary = "Chat with AI assistant for employees",
+              description = "Employees can interact with AI to get insights about their own assessments")
+    @PostMapping("/employee/chat")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<ApiResponse<ChatResponseDto>> employeeChat(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody ChatRequestDto request) {
+        
+        log.info("Processing AI chat request from employee {}: {}", 
+            userDetails.getId(), request.getMessage());
+        
+        // Service will build employee-specific context and get AI response
+        ChatResponseDto response = geminiAIService.employeeChat(userDetails.getId(), request);
+        
+        return ResponseEntity.ok(ApiResponse.success(200, "AI response generated", response));
+    }
 }
