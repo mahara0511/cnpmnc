@@ -1,5 +1,7 @@
 package com.example.restservice.service;
 
+import com.example.restservice.dto.DashboardResponse;
+import com.example.restservice.dto.DashboardSummaryResponse;
 import com.example.restservice.entity.Assessment;
 import com.example.restservice.entity.IsBelongTo;
 import com.example.restservice.entity.Employee;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -269,5 +272,42 @@ public class AssessmentService {
     Assessment updatedAssessment = assessmentRepository.save(assessment);
 
     return assessmentMapper.toDto(updatedAssessment);
+  }
+
+  public DashboardSummaryResponse getEmployeeDashboard(Long employeeId) {
+    Employee employee = employeeRepository.findById(employeeId).orElseThrow(() -> new RuntimeException("Employee not found with id: " + employeeId));
+    List<DashboardResponse> monthly = getMonthlyDashboard(employeeId);
+
+    double avg = monthly.stream()
+            .mapToDouble(DashboardResponse::getAvgScore)
+            .average().orElse(0);
+
+    long total = monthly.stream()
+            .mapToLong(DashboardResponse::getTotalAssessments)
+            .sum();
+
+    return new DashboardSummaryResponse(
+            employeeId,
+            employee.getName(),
+            avg,
+            total,
+            monthly
+    );
+  }
+
+  public List<DashboardResponse> getMonthlyDashboard(Long employeeId) {
+    List<Object[]> results = assessmentRepository.getMonthlyDashboard(employeeId);
+    List<DashboardResponse> responses = new ArrayList<>();
+
+    for (Object[] row : results) {
+      DashboardResponse dto = new DashboardResponse(
+              ((Number) row[0]).intValue(),   // year
+              ((Number) row[1]).intValue(),   // month
+              ((Number) row[2]).longValue(),  // totalAssessments
+              ((Number) row[3]).doubleValue() // avgScore
+      );
+      responses.add(dto);
+    }
+    return responses;
   }
 }

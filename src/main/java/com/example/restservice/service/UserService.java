@@ -1,5 +1,6 @@
 package com.example.restservice.service;
 
+import com.example.restservice.dto.CreateEmployeeDTO;
 import com.example.restservice.entity.Employee;
 import com.example.restservice.mapper.UserMapper;
 import com.example.restservice.entity.Supervisor;
@@ -82,6 +83,12 @@ public class UserService {
             role = "USER";
         }
         return new UserMeResponse(user.getId(), user.getName(), user.getEmail(), role);
+    }
+
+    public UserResponse createEmployee(CreateEmployeeDTO req) {
+        if(existsByEmail(req.getEmail())) throw new RuntimeException("Email already exists");
+        User employee = save(req.getEmail(), req.getPassword(), AuthProvider.LOCAL);
+        return userMapper.toDTO(employee);
     }
 }
 
