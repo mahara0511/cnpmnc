@@ -482,15 +482,13 @@ public class GeminiAIService {
                     "- Status: %s\n" +
                     "- Total Score: %.2f/100\n" +
                     "- Criteria Evaluated: %d\n" +
-                    "- Created: %s\n" +
-                    "- Comment: %s\n\n",
+                    "- Created: %s\n\n",
                     assessment.getId(),
                     assessment.getSupervisor().getName(),
                     assessment.getStatus(),
                     assessment.getTotalScore(),
                     assessment.getIsBelongTo().size(),
-                    assessment.getCreatedAt(),
-                    assessment.getComment() != null ? assessment.getComment() : "No comment"
+                    assessment.getCreatedAt()
                 )));
         }
         
@@ -532,12 +530,10 @@ public class GeminiAIService {
                     "Latest Assessment:\n" +
                     "- Supervisor: %s\n" +
                     "- Score: %.2f/100\n" +
-                    "- Status: %s\n" +
-                    "- Comment: %s\n\n",
+                    "- Status: %s\n\n",
                     latest.getSupervisor().getName(),
                     latest.getTotalScore(),
-                    latest.getStatus(),
-                    latest.getComment() != null ? latest.getComment() : "No comment yet"
+                    latest.getStatus()
                 )));
         }
         
