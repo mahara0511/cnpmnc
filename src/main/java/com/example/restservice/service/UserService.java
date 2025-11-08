@@ -47,8 +47,9 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
-    public User save(String email, String password, AuthProvider provider) {
+    public User save(String email, String password, String name) {
         Employee employee = new Employee();
+        employee.setName(name);
         employee.setEmail(email);
         employee.setPassword(this.hashPassword(password));
         return employeeRepository.save(employee);
@@ -87,7 +88,7 @@ public class UserService {
 
     public UserResponse createEmployee(CreateEmployeeDTO req) {
         if(existsByEmail(req.getEmail())) throw new RuntimeException("Email already exists");
-        User employee = save(req.getEmail(), req.getPassword(), AuthProvider.LOCAL);
+        User employee = save(req.getEmail(), req.getPassword(), req.getName());
         return userMapper.toDTO(employee);
     }
 }
