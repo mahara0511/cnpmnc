@@ -111,21 +111,16 @@ public class GeminiAIService {
     private String buildChatPrompt(ChatRequestDto request, String context) {
         return String.format("""
             You are an AI assistant helping supervisors with performance assessments.
+            Provide clear, helpful, and professional responses.
             
             User Question: %s
             
             Context: %s
             
-            Return response in JSON format:
-            {
-              "reply": "Your detailed response",
-              "suggestedActions": [
-                {"label": "Action", "action": "action_type", "params": {}}
-              ],
-              "relevantData": {}
-            }
-            
-            Only return valid JSON.
+            IMPORTANT: Provide a detailed response in PLAIN TEXT ONLY. 
+            Do NOT use any markdown formatting (no **, *, #, -, bullets, or code blocks).
+            Do NOT use \\n for line breaks.
+            Write naturally as if speaking directly to the person.
             """,
             request.getMessage(),
             context != null ? context : "No additional context"
@@ -141,23 +136,17 @@ public class GeminiAIService {
             
             Employee's Assessment Data: %s
             
-            Guidelines for responses:
+            Guidelines for your response:
             - Provide insights about their performance trends
             - Suggest specific areas for improvement with actionable steps
             - Highlight strengths and achievements
             - Offer encouragement and motivation
             - Explain assessment criteria clearly
             
-            Return response in JSON format:
-            {
-              "reply": "Your supportive and detailed response",
-              "suggestedActions": [
-                {"label": "Action", "action": "action_type", "params": {}}
-              ],
-              "relevantData": {}
-            }
-            
-            Only return valid JSON.
+            IMPORTANT: Provide a supportive and detailed response in PLAIN TEXT ONLY.
+            Do NOT use any markdown formatting (no **, *, #, -, bullets, or code blocks).
+            Do NOT use \\n for line breaks.
+            Write naturally as if speaking directly to the person in a friendly conversation.
             """,
             request.getMessage(),
             context != null ? context : "No assessment data available"
@@ -193,20 +182,61 @@ public class GeminiAIService {
             
             if (response.getStatusCode() == HttpStatus.OK) {
                 JsonNode root = objectMapper.readTree(response.getBody());
-                return root.path("candidates")
-                          .get(0)
-                          .path("content")
-                          .path("parts")
-                          .get(0)
-                          .path("text")
-                          .asText();
+                
+                // Log response for debugging
+                log.debug("Gemini API Response: {}", response.getBody());
+                
+                // Check if response has candidates
+                JsonNode candidates = root.path("candidates");
+                if (candidates.isMissingNode() || candidates.isEmpty()) {
+                    log.error("No candidates in Gemini response: {}", response.getBody());
+                    throw new RuntimeException("Gemini API returned no candidates");
+                }
+                
+                // Safely extract text from response
+                JsonNode candidate = candidates.get(0);
+                if (candidate == null) {
+                    throw new RuntimeException("First candidate is null");
+                }
+                
+                JsonNode content = candidate.path("content");
+                if (content.isMissingNode()) {
+                    throw new RuntimeException("No content in candidate");
+                }
+                
+                JsonNode parts = content.path("parts");
+                if (parts.isMissingNode() || parts.isEmpty()) {
+                    throw new RuntimeException("No parts in content");
+                }
+                
+                JsonNode part = parts.get(0);
+                if (part == null) {
+                    throw new RuntimeException("First part is null");
+                }
+                
+                String text = part.path("text").asText();
+                if (text.isEmpty()) {
+                    throw new RuntimeException("Text content is empty");
+                }
+                
+                return text;
             }
             
+            log.error("Gemini API failed with status: {}", response.getStatusCode());
             throw new RuntimeException("Gemini API call failed: " + response.getStatusCode());
             
         } catch (Exception e) {
-            log.error("Error calling Gemini API", e);
-            throw new RuntimeException("Failed to generate AI response: " + e.getMessage());
+            log.error("Error calling Gemini API: {}", e.getMessage(), e);
+            
+            // Log full error details
+            if (e.getMessage() != null) {
+                log.error("Error details: {}", e.getMessage());
+            }
+            
+            // Return a helpful fallback message instead of throwing exception
+            return "I apologize, but I'm unable to process your request at the moment. " +
+                   "This could be due to a temporary API issue. Please try again in a moment. " +
+                   "If the problem persists, please contact support.";
         }
     }
     
@@ -236,24 +266,12 @@ public class GeminiAIService {
     }
     
     private ChatResponseDto parseChatResponse(String response) {
-        try {
-            String jsonStr = cleanJsonResponse(response);
-            JsonNode node = objectMapper.readTree(jsonStr);
-            
-            return ChatResponseDto.builder()
-                .reply(node.path("reply").asText())
-                .suggestedActions(new ArrayList<>())
-                .relevantData(new HashMap<>())
-                .build();
-                
-        } catch (Exception e) {
-            log.error("Error parsing chat response", e);
-            return ChatResponseDto.builder()
-                .reply(response)
-                .suggestedActions(new ArrayList<>())
-                .relevantData(new HashMap<>())
-                .build();
-        }
+        // Simply return the plain text response from Gemini
+        return ChatResponseDto.builder()
+            .reply(response.trim())
+            .suggestedActions(new ArrayList<>())
+            .relevantData(new HashMap<>())
+            .build();
     }
     
     private String cleanJsonResponse(String response) {
