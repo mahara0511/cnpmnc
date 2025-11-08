@@ -15,6 +15,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.time.LocalDate;
+
 @RestController
 @Tag(name = "User Management", description = "Endpoints for user management")
 @RequestMapping("/users")
@@ -51,8 +53,10 @@ class UserController {
 
     @GetMapping("/dashboard/{employeeId}")
     public ResponseEntity<?> getDashboardSummary(
-            @PathVariable Long employeeId) {
-        DashboardSummaryResponse res = assessmentService.getEmployeeDashboard(employeeId);
+            @PathVariable Long employeeId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        DashboardSummaryResponse res = assessmentService.getEmployeeDashboard(employeeId, startDate, endDate);
         return ResponseEntity.ok(com.example.restservice.dto.ApiResponse.success(200, "Success", res));
     }
 }

@@ -15,6 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import com.example.restservice.dto.ApiResponse;
 import com.example.restservice.security.CustomUserDetails;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,9 +39,11 @@ public class AssessmentController {
   public ResponseEntity<ApiResponse<List<AssessmentResponseDto>>> getSupervisorAssessments(
           @AuthenticationPrincipal CustomUserDetails userDetails,
           @RequestParam(required = false) Long employeeId,
-          @RequestParam(required = false) Status status) {
+          @RequestParam(required = false) Status status,
+          @RequestParam(required = false) LocalDate startDate,
+          @RequestParam(required = false) LocalDate endDate) {
     Long supervisorId = userDetails.getId();
-    List<AssessmentResponseDto> assessments = assessmentService.getAssessmentsBySupervisor(supervisorId, employeeId, status);
+    List<AssessmentResponseDto> assessments = assessmentService.getAssessmentsBySupervisor(supervisorId, employeeId, status, startDate, endDate);
     return ResponseEntity.ok(ApiResponse.success(200, "Success", assessments));
   }
 
@@ -48,9 +52,11 @@ public class AssessmentController {
   @PreAuthorize("hasRole('EMPLOYEE')")
   public ResponseEntity<ApiResponse<List<AssessmentResponseDto>>> getEmployeeAssessments(
           @AuthenticationPrincipal CustomUserDetails userDetails,
-          @RequestParam(required = false) Long supervisorId) {
+          @RequestParam(required = false) Long supervisorId,
+          @RequestParam(required = false) LocalDate starDate,
+          @RequestParam(required = false) LocalDate endDate) {
     Long employeeId = userDetails.getId();
-    List<AssessmentResponseDto> assessments = assessmentService.getAssessmentsByEmployee(employeeId, supervisorId);
+    List<AssessmentResponseDto> assessments = assessmentService.getAssessmentsByEmployee(employeeId, supervisorId, starDate, endDate);
     return ResponseEntity.ok(ApiResponse.success(200, "Success", assessments));
   }
 
