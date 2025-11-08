@@ -1,10 +1,12 @@
 package com.example.restservice.controller;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.example.restservice.service.AssessmentService;
 import com.example.restservice.dto.assessment.AssessmentResponseDto;
 import com.example.restservice.dto.assessment.CreateAssessmentRequestDto;
 import com.example.restservice.dto.assessment.UpdateAssessmentStatusRequestDto;
+import com.example.restservice.dto.assessment.EmployeeAverageScoreDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +16,10 @@ import org.springframework.web.bind.annotation.*;
 import com.example.restservice.dto.ApiResponse;
 import com.example.restservice.security.CustomUserDetails;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import io.swagger.v3.oas.annotations.Operation;
+
 import com.example.restservice.common.enums.Status;
 @RestController
 @Tag(name = "Assessment", description = "Assessment API")
@@ -95,5 +100,56 @@ public class AssessmentController {
     AssessmentResponseDto assessment = assessmentService.updateAssessment(supervisorId, assessmentId, request);
     return ResponseEntity.ok(ApiResponse.success(200, "Assessment updated successfully", assessment));
   }
+
+  @Operation(summary = "Get employee average scores", description = "Get average assessment scores for all employees within a date range. Employees without assessments in the period will have an average score of -1. Default date range is the last 30 days. Results are sorted by average score (descending by default), with total assessments as a tiebreaker.")
+  @GetMapping("/employee-average")
+  @PreAuthorize("hasRole('SUPERVISOR')")
+  public ResponseEntity<ApiResponse<List<EmployeeAverageScoreDto>>> getEmployeeAverageScores(
+          @RequestParam(required = false) String startDate,
+          @RequestParam(required = false) String endDate,
+          @RequestParam(required = false, defaultValue = "desc") String sort) {
+    
+    LocalDateTime start;
+    LocalDateTime end;
+    
+    // Parse dates or use defaults
+    if (endDate == null || endDate.isEmpty()) {
+      end = LocalDateTime.now();
+    } else {
+      try {
+        end = LocalDateTime.parse(endDate + "T23:59:59");
+      } catch (Exception e) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(400, "Invalid endDate format. Use yyyy-MM-dd"));
+      }
+    }
+    
+    if (startDate == null || startDate.isEmpty()) {
+      start = end.minusDays(30);
+    } else {
+      try {
+        start = LocalDateTime.parse(startDate + "T00:00:00");
+      } catch (Exception e) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(400, "Invalid startDate format. Use yyyy-MM-dd"));
+      }
+    }
+    
+    // Validate startDate <= endDate
+    if (start.isAfter(end)) {
+      return ResponseEntity.badRequest()
+              .body(ApiResponse.error(400, "startDate must be less than or equal to endDate"));
+    }
+    
+    // Validate sort parameter
+    if (!sort.equals("asc") && !sort.equals("desc")) {
+      return ResponseEntity.badRequest()
+              .body(ApiResponse.error(400, "Invalid sort parameter. Must be 'asc' or 'desc'"));
+    }
+    
+    List<EmployeeAverageScoreDto> averageScores = assessmentService.getEmployeesAverageScore(start, end, sort);
+    return ResponseEntity.ok(ApiResponse.success(200, "Success", averageScores));
+  }
+
 
 }

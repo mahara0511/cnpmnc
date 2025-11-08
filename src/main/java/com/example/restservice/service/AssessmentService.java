@@ -11,6 +11,8 @@ import com.example.restservice.dto.assessment.AssessmentResponseDto;
 import com.example.restservice.dto.assessment.CreateAssessmentRequestDto;
 import com.example.restservice.dto.assessment.UpdateAssessmentStatusRequestDto;
 import com.example.restservice.dto.assessment.ScoreRequestDto;
+import com.example.restservice.dto.assessment.EmployeeAverageScoreDto;
+import com.example.restservice.dto.assessment.EmployeeDto;
 import com.example.restservice.repository.AssessmentRepository;
 import com.example.restservice.repository.EmployeeRepository;
 import com.example.restservice.repository.UserRepository;
@@ -24,6 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 import com.example.restservice.common.enums.Status;
 @Service
 public class AssessmentService {
@@ -309,5 +313,76 @@ public class AssessmentService {
       responses.add(dto);
     }
     return responses;
+  }
+
+  public List<EmployeeAverageScoreDto> getEmployeesAverageScore(LocalDateTime startDate, LocalDateTime endDate, String sort) {
+    // Get all assessments within the date range
+    List<Assessment> assessments = assessmentRepository.findByCreatedAtBetween(startDate, endDate);
+    
+    // Get all employees
+    List<Employee> allEmployees = employeeRepository.findAll();
+    
+    // Group assessments by employee
+    Map<Long, List<Assessment>> assessmentsByEmployee = assessments.stream()
+            .collect(Collectors.groupingBy(a -> a.getEmployee().getId()));
+    
+    // Calculate average score for each employee
+    List<EmployeeAverageScoreDto> results = allEmployees.stream()
+            .map(employee -> {
+              List<Assessment> employeeAssessments = assessmentsByEmployee.get(employee.getId());
+              
+              // Create EmployeeDto
+              EmployeeDto employeeDto = EmployeeDto.builder()
+                      .id(employee.getId())
+                      .name(employee.getName())
+                      .email(employee.getEmail())
+                      .build();
+              
+              EmployeeAverageScoreDto dto = new EmployeeAverageScoreDto();
+              dto.setEmployee(employeeDto);
+              
+              if (employeeAssessments == null || employeeAssessments.isEmpty()) {
+                // No assessments in this period
+                dto.setAverageScore(-1.0);
+                dto.setTotalAssessments(0L);
+              } else {
+                // Calculate average score
+                double averageScore = employeeAssessments.stream()
+                        .mapToDouble(Assessment::getTotalScore)
+                        .average()
+                        .orElse(-1.0);
+                
+                dto.setAverageScore(averageScore);
+                dto.setTotalAssessments((long) employeeAssessments.size());
+              }
+              
+              return dto;
+            })
+            .collect(Collectors.toList());
+    
+    // Sort the results: first by average score, then by total assessments as tiebreaker
+    if ("asc".equals(sort)) {
+      // Ascending order
+      results.sort((a, b) -> {
+        int scoreCompare = Double.compare(a.getAverageScore(), b.getAverageScore());
+        if (scoreCompare != 0) {
+          return scoreCompare;
+        }
+        // If average scores are equal, sort by total assessments
+        return Long.compare(a.getTotalAssessments(), b.getTotalAssessments());
+      });
+    } else {
+      // Descending order (default)
+      results.sort((a, b) -> {
+        int scoreCompare = Double.compare(b.getAverageScore(), a.getAverageScore());
+        if (scoreCompare != 0) {
+          return scoreCompare;
+        }
+        // If average scores are equal, sort by total assessments
+        return Long.compare(b.getTotalAssessments(), a.getTotalAssessments());
+      });
+    }
+    
+    return results;
   }
 }
