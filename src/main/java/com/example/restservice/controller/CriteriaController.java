@@ -5,10 +5,14 @@ import com.example.restservice.response.ApiResponse;
 import com.example.restservice.response.CriteriaResponseDTO;
 import com.example.restservice.service.CriteriaService;
 import com.example.restservice.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.UUID;
 import java.util.NoSuchElementException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,12 +30,21 @@ public class CriteriaController {
         this.userService = userService;
     }
 
-    // search criteria with search text
-    @Operation(summary = "Search Criteria", description = "Search criteria based on the provided search text")
+    // Search criteria with pagination
+    @PreAuthorize("hasRole('SUPERVISOR')")
+    @Operation(summary = "Search Criteria with Pagination", 
+               description = "Search criteria based on name or description with pagination support")
     @GetMapping("")
-    public ResponseEntity<?> search(@RequestParam(defaultValue = "") String searchText) {
+    public ResponseEntity<?> search(
+            @Parameter(description = "Search query for name or description")
+            @RequestParam(defaultValue = "") String query,
+            @Parameter(description = "Page number (0-indexed)")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "10") int size) {
         try {
-            var results = criteriaService.search(searchText);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<CriteriaResponseDTO> results = criteriaService.searchWithPagination(query, pageable);
             return ResponseEntity.ok(ApiResponse.success(results));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage(), 400));
