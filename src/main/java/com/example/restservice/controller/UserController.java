@@ -49,7 +49,7 @@ class UserController {
         return ResponseEntity.ok(com.example.restservice.dto.ApiResponse.success(200, "Success", res));
     }
 
-    @GetMapping("/employee/{employeeId}")
+    @GetMapping("/dashboard/{employeeId}")
     public ResponseEntity<?> getDashboardSummary(
             @PathVariable Long employeeId) {
         DashboardSummaryResponse res = assessmentService.getEmployeeDashboard(employeeId);

@@ -50,16 +50,16 @@ public class AuthController {
     }
 
     // 🔹 Đăng ký tài khoản
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse<?>> register(@RequestBody AuthRequestDto req) {
-        if (userService.existsByEmail(req.getEmail())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(400, "Email already exists"));
-        }
-
-        userService.save(req.getEmail(), req.getPassword(), AuthProvider.LOCAL);
-        return ResponseEntity.ok(ApiResponse.success(200, "Registered successfully", null));
-    }
+//    @PostMapping("/register")
+//    public ResponseEntity<ApiResponse<?>> register(@RequestBody AuthRequestDto req) {
+//        if (userService.existsByEmail(req.getEmail())) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body(ApiResponse.error(400, "Email already exists"));
+//        }
+//
+//        userService.save(req.getEmail(), req.getPassword(), AuthProvider.LOCAL);
+//        return ResponseEntity.ok(ApiResponse.success(200, "Registered successfully", null));
+//    }
 
     // 🔹 Đăng nhập
     @PostMapping("/login")
