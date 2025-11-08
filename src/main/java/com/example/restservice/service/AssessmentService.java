@@ -19,7 +19,9 @@ import com.example.restservice.mapper.AssessmentMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -59,33 +61,73 @@ public class AssessmentService {
             .collect(Collectors.toList());
   }
 
-  public List<AssessmentResponseDto> getAssessmentsBySupervisor(Long supervisorId, Long employeeId, Status status) {
+  public List<AssessmentResponseDto> getAssessmentsBySupervisor(Long supervisorId, Long employeeId, Status status, LocalDate startDate, LocalDate endDate) {
     List<Assessment> assessments;
-    if (employeeId != null && status != null) {
-      assessments = assessmentRepository.findBySupervisorIdAndEmployeeIdAndStatus(supervisorId, employeeId, status);
-    } else if (employeeId != null) {
-      assessments = assessmentRepository.findBySupervisorIdAndEmployeeId(supervisorId, employeeId);
-    } else if (status != null) {
-      assessments = assessmentRepository.findBySupervisorIdAndStatus(supervisorId, status);
+    if (startDate != null && endDate != null) {
+      if (employeeId != null && status != null) {
+        assessments = assessmentRepository.findBySupervisorIdAndEmployeeIdAndStatusAndCreatedAtBetween(
+                supervisorId, employeeId, status,
+                startDate.atStartOfDay(),
+                endDate.plusDays(1).atStartOfDay()); // tránh mất ngày cuối
+      } else if (employeeId != null) {
+        assessments = assessmentRepository.findBySupervisorIdAndEmployeeIdAndCreatedAtBetween(
+                supervisorId, employeeId,
+                startDate.atStartOfDay(),
+                endDate.plusDays(1).atStartOfDay());
+      } else if (status != null) {
+        assessments = assessmentRepository.findBySupervisorIdAndStatusAndCreatedAtBetween(
+                supervisorId, status,
+                startDate.atStartOfDay(),
+                endDate.plusDays(1).atStartOfDay());
+      } else {
+        assessments = assessmentRepository.findBySupervisorIdAndCreatedAtBetween(
+                supervisorId,
+                startDate.atStartOfDay(),
+                endDate.plusDays(1).atStartOfDay());
+      }
     } else {
-      assessments = assessmentRepository.findBySupervisorId(supervisorId);
+      // Không có khoảng thời gian
+      if (employeeId != null && status != null) {
+        assessments = assessmentRepository.findBySupervisorIdAndEmployeeIdAndStatus(supervisorId, employeeId, status);
+      } else if (employeeId != null) {
+        assessments = assessmentRepository.findBySupervisorIdAndEmployeeId(supervisorId, employeeId);
+      } else if (status != null) {
+        assessments = assessmentRepository.findBySupervisorIdAndStatus(supervisorId, status);
+      } else {
+        assessments = assessmentRepository.findBySupervisorId(supervisorId);
+      }
     }
     return assessments.stream()
             .map(assessmentMapper::toDto)
             .collect(Collectors.toList());
   }
 
-  public List<AssessmentResponseDto> getAssessmentsByEmployee(Long employeeId, Long supervisorId) {
-    List<Assessment> assessments;
-    if (supervisorId != null) {
-      assessments = assessmentRepository.findByEmployeeIdAndSupervisorId(employeeId, supervisorId);
-    } else {
-      assessments = assessmentRepository.findByEmployeeId(employeeId);
+    public List<AssessmentResponseDto> getAssessmentsByEmployee(Long employeeId, Long supervisorId, LocalDate startDate, LocalDate endDate) {
+      List<Assessment> assessments;
+      if (startDate != null && endDate != null) {
+        // Lọc theo khoảng thời gian
+        LocalDateTime startDateTime = startDate.atTime(LocalTime.MIN);
+        LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+
+        if (supervisorId != null) {
+          assessments = assessmentRepository .findByEmployeeIdAndSupervisorIdAndCreatedAtBetween(
+                  employeeId, supervisorId, startDateTime, endDateTime);
+        } else {
+          assessments = assessmentRepository.findByEmployeeIdAndCreatedAtBetween(
+                  employeeId, startDateTime, endDateTime);
+        }
+      } else {
+        if (supervisorId != null) {
+          assessments = assessmentRepository.findByEmployeeIdAndSupervisorId(employeeId, supervisorId);
+        } else {
+          assessments = assessmentRepository.findByEmployeeId(employeeId);
+        }
+      }
+
+      return assessments.stream()
+              .map(assessmentMapper::toDto)
+              .collect(Collectors.toList());
     }
-    return assessments.stream()
-            .map(assessmentMapper::toDto)
-            .collect(Collectors.toList());
-  }
 
   @Transactional
   public AssessmentResponseDto createAssessment(Long supervisorId, CreateAssessmentRequestDto request) {
@@ -274,9 +316,9 @@ public class AssessmentService {
     return assessmentMapper.toDto(updatedAssessment);
   }
 
-  public DashboardSummaryResponse getEmployeeDashboard(Long employeeId) {
+  public DashboardSummaryResponse getEmployeeDashboard(Long employeeId, LocalDate startDate, LocalDate endDate) {
     Employee employee = employeeRepository.findById(employeeId).orElseThrow(() -> new RuntimeException("Employee not found with id: " + employeeId));
-    List<DashboardResponse> monthly = getMonthlyDashboard(employeeId);
+    List<DashboardResponse> monthly = getMonthlyDashboard(employeeId, startDate, endDate);
 
     double avg = monthly.stream()
             .mapToDouble(DashboardResponse::getAvgScore)
@@ -295,9 +337,13 @@ public class AssessmentService {
     );
   }
 
-  public List<DashboardResponse> getMonthlyDashboard(Long employeeId) {
-    List<Object[]> results = assessmentRepository.getMonthlyDashboard(employeeId);
+  public List<DashboardResponse> getMonthlyDashboard(Long employeeId, LocalDate startDate, LocalDate endDate) {
+    LocalDateTime startDateTime = startDate.atTime(LocalTime.MIN);
+    LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+
+    List<Object[]> results = assessmentRepository.getMonthlyDashboard(employeeId, startDateTime, endDateTime);
     List<DashboardResponse> responses = new ArrayList<>();
+
 
     for (Object[] row : results) {
       DashboardResponse dto = new DashboardResponse(
