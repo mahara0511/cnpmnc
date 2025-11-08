@@ -51,12 +51,12 @@ public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
     List<Assessment> findByEmployeeIdAndStatus(Long employeeId, Status status);
     
     // Find assessments by employee and date range
-    @Query("SELECT a FROM Assessment a WHERE a.employee.id = :employeeId AND a.createdAt BETWEEN :startDate AND :endDate")
-    List<Assessment> findByEmployeeIdAndCreatedAtBetween(
-            @Param("employeeId") Long employeeId,
-            @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate
-    );
+//    @Query("SELECT a FROM Assessment a WHERE a.employee.id = :employeeId AND a.createdAt BETWEEN :startDate AND :endDate")
+//    List<Assessment> findByEmployeeIdAndCreatedAtBetween(
+//            @Param("employeeId") Long employeeId,
+//            @Param("startDate") LocalDateTime startDate,
+//            @Param("endDate") LocalDateTime endDate
+//    );
     
     // Find all assessments within date range for all employees
     @Query("SELECT a FROM Assessment a WHERE a.createdAt BETWEEN :startDate AND :endDate")
