@@ -342,6 +342,13 @@ public class AssessmentService {
   }
 
   public List<DashboardResponse> getMonthlyDashboard(Long employeeId, LocalDate startDate, LocalDate endDate) {
+    if (startDate == null) {
+      startDate = LocalDate.of(1900, 1, 1);
+    }
+    if (endDate == null) {
+      endDate = LocalDate.now();
+    }
+
     LocalDateTime startDateTime = startDate.atTime(LocalTime.MIN);
     LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
 
