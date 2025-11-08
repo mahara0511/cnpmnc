@@ -29,7 +29,7 @@ public interface AssessmentRepository extends JpaRepository<Assessment, Long> {
                AVG(a.totalScore) AS avgScore
         FROM Assessment a
         WHERE a.employee.id = :employeeId
-            AND a.status = com.example.restservice.common.enums.Status.Completed
+            AND a.status = com.example.restservice.common.enums.Status.Published
         GROUP BY YEAR(a.createdAt), MONTH(a.createdAt)
         ORDER BY YEAR(a.createdAt), MONTH(a.createdAt)
     """)
