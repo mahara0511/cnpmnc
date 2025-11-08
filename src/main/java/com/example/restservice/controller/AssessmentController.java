@@ -1,107 +1,99 @@
 package com.example.restservice.controller;
-
-import org.springframework.security.core.userdetails.User;
-import com.example.restservice.dto.ApiResponse;
-import com.example.restservice.dto.AssessmentResponseDTO;
-import com.example.restservice.dto.CreateAssessmentDTO;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import com.example.restservice.service.AssessmentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.restservice.dto.assessment.AssessmentResponseDto;
+import com.example.restservice.dto.assessment.CreateAssessmentRequestDto;
+import com.example.restservice.dto.assessment.UpdateAssessmentStatusRequestDto;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-
-import jakarta.validation.Valid;
+import com.example.restservice.dto.ApiResponse;
+import com.example.restservice.security.CustomUserDetails;
 import java.util.List;
-
+import io.swagger.v3.oas.annotations.Operation;
+import com.example.restservice.common.enums.Status;
 @RestController
-@Tag(name = "Assessment Management", description = "Endpoints for assessment management")
-@RequestMapping("/assessment")
+@Tag(name = "Assessment", description = "Assessment API")
+@RequestMapping("/assessments")
 public class AssessmentController {
+  private final AssessmentService assessmentService;
 
-    @Autowired
-    private AssessmentService assessmentService;
+  public AssessmentController(AssessmentService assessmentService) {
+    this.assessmentService = assessmentService;
+  }
 
-    public AssessmentController() {}
+  @Operation(summary = "Get assessments for supervisor with optional filters", description = "Retrieve assessments created by the authenticated supervisor. Optional filters include employeeId and status.")
+  @GetMapping("/supervisor")
+  @PreAuthorize("hasRole('SUPERVISOR')")
+  public ResponseEntity<ApiResponse<List<AssessmentResponseDto>>> getSupervisorAssessments(
+          @AuthenticationPrincipal CustomUserDetails userDetails,
+          @RequestParam(required = false) Long employeeId,
+          @RequestParam(required = false) Status status) {
+    Long supervisorId = userDetails.getId();
+    List<AssessmentResponseDto> assessments = assessmentService.getAssessmentsBySupervisor(supervisorId, employeeId, status);
+    return ResponseEntity.ok(ApiResponse.success(200, "Success", assessments));
+  }
 
-    @GetMapping("/all")
-    @Operation(summary = "Get all assessments with role-based filtering",
-               description = "EMPLOYEE: Can optionally filter by supervisorId, returns only Published assessments. " +
-                           "SUPERVISOR: Can optionally filter by employeeId and status.")
-    public ResponseEntity<ApiResponse<List<AssessmentResponseDTO>>> getAllAssessments(
-            @Parameter(hidden = true) @AuthenticationPrincipal User user,
-            @Parameter(description = "Supervisor ID (optional filter for EMPLOYEE role)")
-            @RequestParam(required = false) Long supervisorId,
-            @Parameter(description = "Employee ID (optional filter for SUPERVISOR role)")
-            @RequestParam(required = false) Long employeeId,
-            @Parameter(description = "Assessment status filter (optional for SUPERVISOR role)")
-            @RequestParam(required = false) String status,
-            @Parameter(description = "Page number (default: 1)")
-            @RequestParam(required = false, defaultValue = "1") Integer page,
-            @Parameter(description = "Number of items per page (default: 10)")
-            @RequestParam(required = false, defaultValue = "10") Integer limit) {
-        
-        try {
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), 
-                              "User not authenticated"));
-            }
+  @Operation(summary = "Get assessments for employee with optional supervisor filter", description = "Retrieve assessments assigned to the authenticated employee. Optional filter includes supervisorId.")
+  @GetMapping("/employee")
+  @PreAuthorize("hasRole('EMPLOYEE')")
+  public ResponseEntity<ApiResponse<List<AssessmentResponseDto>>> getEmployeeAssessments(
+          @AuthenticationPrincipal CustomUserDetails userDetails,
+          @RequestParam(required = false) Long supervisorId) {
+    Long employeeId = userDetails.getId();
+    List<AssessmentResponseDto> assessments = assessmentService.getAssessmentsByEmployee(employeeId, supervisorId);
+    return ResponseEntity.ok(ApiResponse.success(200, "Success", assessments));
+  }
 
-            String userEmail = user.getUsername();
-            List<AssessmentResponseDTO> assessments = assessmentService.getAllAssessments(
-                    userEmail, supervisorId, employeeId, status, page, limit);
+  @Operation(summary = "Create assessment", description = "Create a new assessment for an employee. Only supervisors can create assessments.")
+  @PostMapping
+  @PreAuthorize("hasRole('SUPERVISOR')")
+  public ResponseEntity<ApiResponse<AssessmentResponseDto>> createAssessment(
+          @AuthenticationPrincipal CustomUserDetails userDetails,
+          @RequestBody CreateAssessmentRequestDto request) {
+    Long supervisorId = userDetails.getId();
+    AssessmentResponseDto assessment = assessmentService.createAssessment(supervisorId, request);
+    return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success(201, "Success", assessment));
+  }
 
-            return ResponseEntity.ok(ApiResponse.success(
-                    HttpStatus.OK.value(),
-                    "Success",
-                    assessments
-            ));
+  @Operation(summary = "Update assessment status", description = "Update the status of an assessment. Only supervisors can update assessment status.")
+  @PatchMapping("/{assessmentId}/status")
+  @PreAuthorize("hasRole('SUPERVISOR')")
+  public ResponseEntity<ApiResponse<AssessmentResponseDto>> updateAssessmentStatus(
+          @AuthenticationPrincipal CustomUserDetails userDetails,
+          @PathVariable Long assessmentId,
+          @RequestBody UpdateAssessmentStatusRequestDto request) {
+            
+    Long supervisorId = userDetails.getId();
+    AssessmentResponseDto assessment = assessmentService.updateAssessmentStatus(supervisorId, assessmentId, request);
+    return ResponseEntity.ok(ApiResponse.success(200, "Success", assessment));
+  }
 
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), 
-                          "Internal server error: " + e.getMessage()));
-        }
-    }
+  @Operation(summary = "Get assessment by ID", description = "Retrieve detailed information of a specific assessment by its ID. Supervisors can view their own assessments, employees can view their assigned assessments.")
+  @GetMapping("/{assessmentId}")
+  @PreAuthorize("hasAnyRole('SUPERVISOR', 'EMPLOYEE')")
+  public ResponseEntity<ApiResponse<AssessmentResponseDto>> getAssessmentById(
+          @AuthenticationPrincipal CustomUserDetails userDetails,
+          @PathVariable Long assessmentId) {
+    AssessmentResponseDto assessment = assessmentService.getAssessmentById(userDetails.getId(), assessmentId);
+    return ResponseEntity.ok(ApiResponse.success(200, "Success", assessment));
+  }
 
-    @PostMapping
-    @Operation(summary = "Create a new assessment",
-               description = "Only supervisors can create assessments. Creates an assessment with status 'InProgress'.")
-    public ResponseEntity<ApiResponse<AssessmentResponseDTO>> createAssessment(
-            @Parameter(hidden = true) @AuthenticationPrincipal org.springframework.security.core.userdetails.User user,
-            @Valid @RequestBody CreateAssessmentDTO request) {
-        
-        try {
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), 
-                              "User not authenticated"));
-            }
+  @Operation(summary = "Update assessment", description = "Update an existing assessment including criteria scores. Can add new criteria, update existing scores, or remove criteria. Only supervisors can update assessments.")
+  @PutMapping("/{assessmentId}")
+  @PreAuthorize("hasRole('SUPERVISOR')")
+  public ResponseEntity<ApiResponse<AssessmentResponseDto>> updateAssessment(
+          @AuthenticationPrincipal CustomUserDetails userDetails,
+          @PathVariable Long assessmentId,
+          @RequestBody CreateAssessmentRequestDto request) {
+    Long supervisorId = userDetails.getId();
+    AssessmentResponseDto assessment = assessmentService.updateAssessment(supervisorId, assessmentId, request);
+    return ResponseEntity.ok(ApiResponse.success(200, "Assessment updated successfully", assessment));
+  }
 
-            String supervisorEmail = user.getUsername();
-            AssessmentResponseDTO assessment = assessmentService.createAssessment(supervisorEmail, request);
-
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success(
-                            HttpStatus.CREATED.value(),
-                            "Success",
-                            assessment
-                    ));
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), 
-                          "Internal server error: " + e.getMessage()));
-        }
-    }
 }

@@ -2,6 +2,8 @@ package com.example.restservice.repository;
 
 import com.example.restservice.entity.Employee;
 import com.example.restservice.response.UserResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -10,4 +12,5 @@ import java.util.List;
 public interface EmployeeRepository  extends JpaRepository<Employee, Long> {
     @Query("SELECT new com.example.restservice.response.UserResponse(e.name, e.email, e.id) FROM Employee e")
     List<UserResponse> findAllEmployees();
+    Page<Employee> findByNameContainingIgnoreCase(String fullName, Pageable pageable);
 }

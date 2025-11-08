@@ -1,14 +1,14 @@
 package com.example.restservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import com.example.restservice.common.enums.Status;
 
 import com.example.restservice.common.enums.AssessmentStatus;
 
@@ -22,29 +22,30 @@ public class Assessment {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(name = "totalScore")
+    @Column(name = "total_score")
     private double totalScore;
 
-    @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private AssessmentStatus status;
+    @Column(name = "status")
+    private Status status;
 
-    @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<IsBelongTo> isBelongTo;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supervisorId",referencedColumnName = "id")
+    @JoinColumn(name = "supervisor_id", referencedColumnName = "id")
     private Supervisor supervisor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id", unique = true)
+    @JoinColumn(name = "employee_id")
     private Employee employee;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private Instant createdAt;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private Instant updatedAt;
+    @PrePersist
+    protected void onCreate() {
+    createdAt = LocalDateTime.now();
+    }
 }
