@@ -8,6 +8,8 @@ import com.example.restservice.repository.UserRepository;
 import com.example.restservice.response.CriteriaDetailResponse;
 import com.example.restservice.response.CriteriaResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -27,6 +29,23 @@ public class CriteriaService {
     public List<CriteriaResponseDTO> search(String searchText) {
         List<Criteria> criteriaList = criteriaRepository.findByNameContainingIgnoreCase(searchText);
         return criteriaMapper.toDTOs(criteriaList);
+    }
+    
+    public Page<CriteriaResponseDTO> searchWithPagination(String query, Pageable pageable) {
+        Page<Criteria> criteriaPage;
+        
+        if (query == null || query.trim().isEmpty()) {
+            // If no query, return all criteria with pagination
+            criteriaPage = criteriaRepository.findAll(pageable);
+        } else {
+            // Search by name or description
+            criteriaPage = criteriaRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                query, query, pageable
+            );
+        }
+        
+        // Map Page<Criteria> to Page<CriteriaResponseDTO>
+        return criteriaPage.map(criteriaMapper::toDTO);
     }    
 
     public CriteriaResponseDTO create(CreateCriteriaDTO req) {

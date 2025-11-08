@@ -38,3 +38,8 @@ server:
     include-message: always
     include-stacktrace: never
     include-binding-errors: never
+
+# Swagger Server URL
+swagger:
+  server:
+    url: ${SWAGGER_SERVER_URL:http://localhost:8080}
